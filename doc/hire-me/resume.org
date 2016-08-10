@@ -3,6 +3,7 @@
 #+EMAIL:   jedahu@gmail.com
 #+DATE:    <2016-08-08 Mon> 
 #+OPTIONS: toc:1
+#+HTML_HEAD: <link rel='stylesheet' type='text/css' href='/_static/resume.css'>
 
 #+HTML_NAV: _nav.org
 
