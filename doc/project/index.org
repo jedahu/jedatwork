@@ -1,0 +1,12 @@
+#+TITLE:  Projects
+#+AUTHOR: Jeremy Hughes
+#+EMAIL:  jedahu@gmail.com
+#+DATE:   <2016-08-08 Mon> 
+
+#+INCLUDE: _nav.org
+
+* Projects                                                            :notoc:
+:PROPERTIES:
+:HTML_CONTAINER_CLASS: hide listing
+:END:
+#+INCLUDE: _toc.org

@@ -1,0 +1,19 @@
+* [[https://gettyped.github.io/][Get Typed /motivations for using static types/]]
+
+Early stage project intended to become a compendium of information on
+- why static types are useful,
+- examples of them in action, and
+- implementations of useful types in various languages.
+
+Written in [[http://orgmode.org/][org mode]] with [[lit][literate programming via org-babel]] so that the example
+implementations are “tangled” into their own source projects for compilation and
+testing.
+
+#+LINK: lit http://orgmode.org/worg/org-contrib/babel/intro.html#literate-programming
+
+The primary aim is padagogical, so where possible there will be pointers to
+existing projects better suited for real-world use.
+
+* [[https://github.com/sharper-library/][Sharper Library /functional programming library for C#/]]
+
+A library of libraries for functional and type-safe programming in C#.

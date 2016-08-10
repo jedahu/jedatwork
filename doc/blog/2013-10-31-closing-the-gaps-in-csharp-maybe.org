@@ -1,0 +1,152 @@
+#+TITLE:  Closing the gaps in C#: Maybe
+#+AUTHOR: Jeremy Hughes
+#+EMAIL:  jedahu@gmail.com
+#+DATE:   <2013-10-31 Thu>
+
+#+INCLUDE: _nav.org
+
+* Introduction                                                        :notoc:
+:PROPERTIES:
+:HTML_CONTAINER_CLASS: hide
+:END:
+#+NAME: motivation
+#+BEGIN_MOTIVATION
+Null shouldn’t exist. It does, but let’s not use it.
+#+END_MOTIVATION
+
+Use Maybe for optional values. It cannot be null because it is a struct. Here is
+a minimal implementation.
+
+#+BEGIN_SRC csharp
+  public struct Maybe<A>
+  {
+      private readonly A a;
+      private readonly bool isJust;
+
+      internal Maybe(A a)
+      {
+          isJust = true;
+          this.a = a;
+      }
+
+      public B Cata<B>(Func<B> nothing, Func<A, B> just)
+      {
+          return isJust ? just(a) : nothing();
+      }
+  }
+#+END_SRC
+
+Cata folds over the possible states of Maybe. It is the only method the struct
+needs to have. Other operations on Maybe can be defined externally.
+
+*Constructors:*
+
+#+BEGIN_SRC csharp
+  public static class Maybe
+  {
+      public static Maybe<A> Just<A>(A a)
+      {
+          return new Maybe<A>(a);
+      }
+
+      public static Maybe<A> Nothing<A>()
+      {
+          return new Maybe<A>();
+      }
+  }
+#+END_SRC
+
+*Useful functions.* Their types tell the story:
+
+#+BEGIN_SRC csharp
+  public static class MaybeMethods
+  {
+      public static A ValueOr<A>(this Maybe<A> fa, Func<A> f)
+      {
+          return fa.Cata(f, a => a);
+      }
+
+      public static IEnumerable<A> Justs<A>(this IEnumerable<Maybe<A>> maybes)
+      {
+          return maybes.SelectMany(m => m.Enumerable());
+      }
+  }
+#+END_SRC
+
+*Morphisms.* Transforms from Maybe to other types:
+
+#+BEGIN_SRC csharp
+  public static class MaybeMorphisms
+  {
+      private static IEnumerable<A> PureEnumerable<A>(this A a)
+      {
+          yield return a;
+      }
+
+      public static IEnumerable<A> Enumerable<A>(this Maybe<A> fa)
+      {
+          return fa.Cata(Enumerable.Empty<A>, a => a.PureEnumerable());
+      }
+  }
+#+END_SRC
+
+*Nullsafety.* Interacting with code that uses null:
+
+#+BEGIN_SRC csharp
+  public static class MaybeNullsafe
+  {
+      public static Maybe<A> ToMaybe<A>(this A a)
+          where A : class
+      {
+          return a == null ? Maybe.Nothing<A>() : Maybe.Just(a);
+      }
+
+      public static Maybe<A> ToMaybe<A>(this A? a)
+          where A : struct
+      {
+          return a.HasValue ? Maybe.Just(a.Value) : Maybe.Nothing<A>();
+      }
+
+      public static Maybe<A> MaybeFirst<A>(this IEnumerable<A> list)
+      {
+          // Cannot test an IEnumerable for emptiness without 'using' it.
+          // try-catch is the only way.
+          try
+          {
+              return Maybe.Just(list.First());
+          }
+
+          {
+              return Maybe.Nothing<A>();
+          }
+      }
+
+      public static Maybe<A> MaybeGet<K, A>(this IDictionary<K, A> dict, K key)
+      {
+          try
+          {
+              return Maybe.Just(dict[key]);
+          }
+          catch (NullReferenceException e)
+          {
+              throw new Exception("MaybeGet on a null IDictionary.", e);
+          }
+          catch (KeyNotFoundException)
+          {
+              return Maybe.Nothing<A>();
+          }
+      }
+  }
+#+END_SRC
+
+*Predicate functions:*
+
+#+BEGIN_SRC csharp
+  public static class MaybePredicates
+  {
+      public static bool JustTest<A>(this Maybe<A> fa, Func<A, bool> f)
+      {
+          return fa.Cata(() => false, f);
+      }
+  }
+#+END_SRC

@@ -1,0 +1,14 @@
+* [[proj:project/index.org][Projects]]
+:PROPERTIES:
+:HTML_CONTAINER_CLASS: branch-project
+:END:
+
+* [[proj:blog/index.org][Blog]]
+:PROPERTIES:
+:HTML_CONTAINER_CLASS: branch-blog
+:END:
+
+* [[proj:hire-me/index.org][Hire me]]
+:PROPERTIES:
+:HTML_CONTAINER_CLASS: branch-hireme
+:END:

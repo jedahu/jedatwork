@@ -1,0 +1,205 @@
+#+TITLE:  Algebraic Data Types for clear thinking
+#+AUTHOR: Jeremy Hughes
+#+EMAIL:  jedahu@gmail.com
+#+DATE:   <2014-07-30 Wed>
+
+#+INCLUDE: _nav.org
+
+* Introduction                                                        :notoc:
+:PROPERTIES:
+:HTML_CONTAINER_CLASS: hide
+:END:
+#+NAME: motivation
+#+BEGIN_MOTIVATION
+Objects conflate construction, implementation hiding, (subtype) polymorphism,
+and the grouping of similar functionality. Algebraic Data Types (ADTs) help
+untangle these concepts.
+#+END_MOTIVATION
+
+* In algebraic notation
+Using the following notation:
+
+- ~1~ for the unit type,
+- ~X~ for a primitive or existing type,
+- ~X * Y~ for a product of two types,
+- ~X + Y~ for a sum of two types;
+
+we can describe ADTs.
+
+- Pair     :: ~X * Y~
+- Ordering :: ~1 + 1 + 1~
+- List     :: ~L = 1 + X * L~
+
+* In Haskell
+
+- Pair ::
+     #+BEGIN_SRC haskell
+       data Pair x y = Pair x y
+
+       -- construction
+       pair = Pair 3 "foo"
+
+       -- deconstruction
+       item1 (Pair x _) = x
+
+       item2 (Pair _ y) = y
+     #+END_SRC
+
+- Ordering ::
+     #+BEGIN_SRC haskell
+       data Ordering = LT | EQ | GT
+       
+       -- construction
+       lessThan = LT
+       
+       -- deconstruction
+       isLessThan LT = True
+       isLessThan _  = False
+     #+END_SRC
+
+- List ::
+     #+BEGIN_SRC haskell
+       data List x = Nil | Cons x (List x)
+       
+       -- construction
+       numbers = Cons 1 (Cons 2 Nil)
+       
+       -- deconstruction
+       unsafeHead (Cons x _) = x
+       unsafeHead Nil        = error "head of empty list"
+     #+END_SRC
+
+* In CSharp
+
+- Pair ::
+     It is easy to encode a product in C#. It is simply a class where there is
+     no difference between the constructor arguments and the class’ fields.
+     
+     #+BEGIN_SRC csharp
+       public sealed class Pair<X, Y>
+       {
+           public readonly X Item1;
+           public readonly Y Item2;
+
+           Pair(X x, Y y)
+           {
+               Item1 = x;
+               Item2 = y;
+           }
+       }
+
+       // construction
+       var pair = new Pair(3, "foo");
+
+       // deconstruction
+       pair.Item1
+       pair.Item2
+     #+END_SRC
+
+- Ordering ::
+     A sum type with all nullary constructors is representable by an enum.
+     
+     #+BEGIN_SRC csharp
+       public enum Ordering { LT, EQ, GT }
+       
+       // construction
+       var lessThan = Ordering.LT;
+       
+       // deconstruction
+       bool isLessThan(Ordering o)
+       {
+           return o == Ordering.LT;
+       }
+     #+END_SRC
+
+- List ::
+     Sum types containing a non-nullary constructor require a more verbose
+     approach.
+     
+     *1.* An abstract class with a single private default constructor to ensure
+     that it cannot be instantiated except through a subclass.
+     
+     #+BEGIN_SRC csharp
+       public abstract class List<X>
+       {
+           private List() { }
+     #+END_SRC
+     
+     *2.* A private (sealed) subclass for each constructor in the sum type.
+
+     #+BEGIN_SRC csharp
+           private sealed class NilCase
+               : List<X>
+           {
+           }
+       
+           private sealed class ConsCase
+               : List<X>
+           {
+               public readonly X Head;
+               public readonly List<X> Tail;
+       
+               public ConsCase(X head, List<X> tail)
+               {
+                   Head = head;
+                   Tail = tail;
+               }
+           }
+     #+END_SRC
+     
+     *3.* A publically accessable constructor function for each constructor in
+     the sum type.
+     
+     #+BEGIN_SRC csharp
+           public static List<X> Nil
+           {
+               get { return new NilCase(); }
+           }
+       
+           public static List<X> Cons(X head, List<X> tail)
+           {
+               return ConsCase(head, tail);
+           }
+     #+END_SRC
+     
+     *4.* And a method that folds over the constructors in the sum type.
+     
+     #+BEGIN_SRC csharp
+           public T Fold<T>(Func<T> nil, Func<X, List<X>, T> cons)
+           {
+               return this is NilCase
+                   ? nil()
+                   : cons(((ConsCase)this).Head, ((ConsCase)this).Tail);
+           }
+       }
+     #+END_SRC
+     
+     Values are constructed using the constructor functions.
+     
+     #+BEGIN_SRC csharp
+       var numbers = List<int>.Cons(1, List<int>.Cons(2, List<int>.Nil));
+     #+END_SRC
+     
+     And deconstructed using Fold.
+     
+     #+BEGIN_SRC csharp
+       X UnsafeHead<X>(List<X> list)
+       {
+           return list.Fold(
+               () =>
+               {
+                   throw new InvalidOperationException("Head of empty list");
+               },
+               (head, _) => head);
+       }
+     #+END_SRC
+
+* Deconflation
+
+Now we have ADTs. They are types that do not hide their implementation, do not
+take part in subtype polymorphism, do not provide a grouping for methods, and
+have constructors that do no work.
+
+The above bits that are now decoupled from our data types will have to come from
+somewhere else. The building blocks are all here: ADTs, parametric polymorphic
+types, and type classes.

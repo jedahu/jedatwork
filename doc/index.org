@@ -1,0 +1,32 @@
+#+TITLE:   Home
+#+AUTHOR:  Jeremy Hughes
+#+EMAIL:   jedahu@gmail.com
+#+DATE:    <2016-08-08 Mon> 
+#+OPTIONS: toc:1
+
+* Navigation                                                          :notoc:
+:PROPERTIES:
+:HTML_CONTAINER_CLASS: root-navigation
+:END:
+#+INCLUDE: _nav.org
+
+* Introduction                                                        :notoc:
+:PROPERTIES:
+:HTML_CONTAINER_CLASS: hide
+:END:
+#+NAME: motivation
+#+BEGIN_MOTIVATION
+Programming with functions and types. Purescript. NixOS. Spacemacs.
+#+END_MOTIVATION
+
+* [[proj:project/index.org][Projects]]                                                              :nav:
+:PROPERTIES:
+:HTML_CONTAINER_CLASS: listing
+:END:
+#+INCLUDE: project/_toc.org
+
+* [[proj:blog/index.org][Blog]]                                                                 :nav:
+:PROPERTIES:
+:HTML_CONTAINER_CLASS: listing
+:END:
+#+INCLUDE: blog/_toc.org

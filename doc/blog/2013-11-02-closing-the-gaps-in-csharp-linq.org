@@ -1,0 +1,102 @@
+#+TITLE:  Closing the gaps in C#: Linq
+#+AUTHOR: Jeremy Hughes
+#+EMAIL:  jedahu@gmail.com
+#+DATE:   <2013-11-02 Sat>
+
+#+INCLUDE: _nav.org
+
+* Introduction                                                        :notoc:
+:PROPERTIES:
+:HTML_CONTAINER_CLASS: hide
+:END:
+#+NAME: motivation
+#+BEGIN_MOTIVATION
+Linq is monads in disguise.
+#+END_MOTIVATION
+
+Linq is not just for queries. Linq is monads in disguise. Select is map and
+SelectMany is bind.
+
+Implementation for Maybe:
+
+#+BEGIN_SRC csharp
+  public static class MaybeMonad
+  {
+      public static Maybe<B> Select<A, B>(this Maybe<A> fa, Func<A, B> f)
+      {
+          return fa.Cata(() => Maybe.Nothing<B>(), a => Maybe.Just(f(a)));
+      }
+
+      public static Maybe<B> SelectMany<A, B>(
+          this Maybe<A> fa, Func<A, Maybe<B>> f)
+      {
+          return fa.Cata(() => Maybe.Nothing<B>(), f);
+      }
+
+      public static Maybe<C> SelectMany<A, B, C>(
+          this Maybe<A> fa, Func<A, Maybe<B>> f, Func<A, B, C> f2)
+      {
+          return fa.Select(a => f(a).Select(b => Maybe.Just(f2(a, b))));
+      }
+
+      public static Maybe<A> Where<A>(
+          this Maybe<A> fa, Func<A, bool> predicate)
+      {
+          return fa.Cata(
+              Maybe.Nothing<A>,
+              a => predicate(a) ? fa : Maybe.Nothing<A>());
+      }
+  }
+#+END_SRC
+
+Use Maybe with Linq to compose expressions that return something or nothing:
+
+#+BEGIN_SRC csharp
+  public static class Example
+  {
+      public interface Person
+      {
+          public string Name { get; }
+          public Maybe<Person> BestFriend { get; }
+          public Maybe<string> FavouriteBook { get; }
+      }
+
+      public static Maybe<string> BestFriendsFavouriteBook(Person p)
+      {
+          return p.BestFriend.SelectMany(f => f.FavouriteBook);
+      }
+
+      public static Maybe<string> BestFriendsFavouriteBook1(Person p)
+      {
+          return
+              from f in p.BestFriend
+              from b in f.FavouriteBook
+              select b;
+      }
+
+      public static Maybe<string> NameOfBestFriendWhoLikesBook(
+          Person p, string book)
+      {
+          return p.BestFriend.Select(
+              f => f.FavouriteBook
+                  .Where(b => b == book)
+                  .Select(b => f.Name));
+      }
+
+      public static Maybe<string> NameOfBestFriendWhoLikesBook1(
+          Person p, string book)
+      {
+          return
+              from f in p.BestFriend
+              from b in f.FavouriteBook
+              where b == book
+              select f.Name;
+      }
+
+      public static string GetFriendsBookOrPotentiallyExpensiveDefault(
+          Person p, Func<string> getDefault)
+      {
+          return BestFriendsFavouriteBook(p).ValueOr(getDefault);
+      }
+  }
+#+END_SRC

@@ -1,0 +1,209 @@
+#+TITLE:  Closing the gaps in C#: Immutable records
+#+AUTHOR: Jeremy Hughes
+#+EMAIL:  jedahu@gmail.com
+#+DATE:   <2013-11-01 Fri>
+
+#+INCLUDE: _nav.org
+
+* Introduction                                                        :notoc:
+:PROPERTIES:
+:HTML_CONTAINER_CLASS: hide
+:END:
+#+NAME: motivation
+#+BEGIN_MOTIVATION
+Immutability makes equational reasoning possible. C# doesn’t make this easy
+because it has no simple mechanism for copy-on-write update of records.
+#+END_MOTIVATION
+
+Let’s start by reimplementing Tuple to give it copy-on-write updates:
+
+#+BEGIN_SRC csharp
+  public struct Product<A, B>
+  {
+      public readonly A Get1;
+      public readonly B Get2;
+
+      public Product(A a, B b)
+      {
+          Get1 = a;
+          Get2 = b;
+      }
+
+      public Product<A, B> Set1(A a) { return new Product<A, B>(a, Get2); }
+      public Product<A, B> Set2(B b) { return new Product<A, B>(Get1, b); }
+
+      public Product<A, B> Update1(Func<A, A> f) { return Set1(f(Get1)); }
+      public Product<A, B> Update2(Func<B, B> f) { return Set2(f(Get2)); }
+  }
+
+  public static class Product
+  {
+      public static Product<A, B> Create<A, B>(A a, B b)
+      {
+          return new Product<A, B>(a, b);
+      }
+  }
+#+END_SRC
+
+And so on for ~Product<A, B, ..., N>~.
+
+This is an improvement on Tuple. However, Product cannot be subclassed (not all
+~Product<A, B>~ represent the same thing), and nested updates are a bit
+unwieldy:
+
+#+BEGIN_SRC csharp
+  public static class UnwieldyUpdate
+  {
+      public static Product<Product<A, B>, C>
+          UpdateB(Product<A, Product<B, C>> p, Func<B, B> f)
+      {
+          return p.Update1(p1 => p1.Update2(f));
+      }
+  }
+#+END_SRC
+
+Add first class fields and a record type and both those problems are ameliorated
+somewhat:
+
+First class fields:
+
+#+BEGIN_SRC csharp
+  public class Field<A, B>
+  {
+      private readonly A record;
+      private readonly Func<A, B> get;
+      private readonly Func<A, B, A> set;
+
+      public Field(A record, Func<A, B> get, Func<A, B, A> set)
+      {
+          this.record = record;
+          this.get = get;
+          this.set = set;
+      }
+
+      public B Get
+      {
+          get { return get(record); }
+      }
+
+      public A Set(B a)
+      {
+          return set(record, a);
+      }
+
+      public A Update(Func<B, B> f)
+      {
+          return set(record, f(get(record)));
+      }
+
+      public Field<A, C> Choose<C>(Func<B, Field<B, C>> f)
+      {
+          var b = get(record);
+          var bcf = f(get(record));
+          return new Field<A, C>(
+              record,
+              r => bcf.get(get(r)),
+              (a, c) => set(a, bcf.set(b, c)));
+      }
+  }
+#+END_SRC
+
+Record type:
+
+#+BEGIN_SRC csharp
+  public abstract class RecordBase<R, A>
+      where R : RecordBase<R, A>
+  {
+      public readonly A Peer;
+
+      protected RecordBase(A a)
+      {
+          Peer = a;
+      }
+
+      protected abstract R Create(A a);
+
+      protected Field<R, F>
+          GetField<F>(R record, Func<A, F> get, Func<A, F, A> set)
+      {
+          return record.Field(r => get(r.Peer), (r, f) => Create(set(r.Peer, f)));
+      }
+  }
+
+  public abstract class Record<R, A, B>
+      : RecordBase<R, Product<A, B>>
+      where R : Record<R, A, B>
+  {
+      protected Record(Product<A, B> a) : base(a) { }
+
+      protected Field<R, A> Field1(R record)
+      {
+          return GetField(record, p => p.Get1, (p, f) => p.Set1(f));
+      }
+
+      protected Field<R, B> Field2(R record)
+      {
+          return GetField(record, p => p.Get2, (p, f) => p.Set2(f));
+      }
+  }
+#+END_SRC
+
+Now creation of record subtypes is possible, and nested updates look nicer:
+
+#+BEGIN_SRC csharp
+  public static class Example
+  {
+      public class PersonStats
+          : Record<PersonStats, int, double>
+      {
+          private PersonStats(Product<int, double> p)
+              : base(p)
+          {
+          }
+
+          protected PersonStats Create(Product<int, double> p)
+          {
+              return PersonStats(p);
+          }
+
+          public Field<PersonStats, int> Age { get { return Field1(this); } }
+          public Field<PersonStats, double> Height { get { return Field2(this); } }
+
+          public static PersonStats Create(int age, double height)
+          {
+              return new PersonStats(Product.Create(age, height));
+          }
+      }
+
+      public class Person
+          : Record<Person, string, PersonStats>
+      {
+          private Person(Product<string, PersonStats> p)
+              : base(p)
+          {
+              Name = Field1(this);
+              Stats = Field2(this);
+          }
+
+          protected Person Create(Product<string, PersonStats> p)
+          {
+              return Person(p);
+          }
+
+          public readonly Field<Person, string> Name;
+          public readonly Field<Person, PersonStats> Stats;
+
+          public static Person Create(string name, PersonStats stats)
+          {
+              return new Person(Product.Create(name, stats));
+          }
+      }
+
+      public static Person Grow(Person p, double amount)
+      {
+          p.Stats.Choose(s => s.Height).Update(h => h + amount);
+      }
+  }
+#+END_SRC
+
+There. Less onerous record type creation, and a tractable nested update syntax.

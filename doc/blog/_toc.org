@@ -1,0 +1,16 @@
+* [[proj:blog/2016-05-06-store-validation-state-in-types.org][/2016-05-06/ Store validation state in types]]
+#+INCLUDE: 2016-05-06-store-validation-state-in-types.org::motivation
+* [[proj:blog/2016-05-05-xunit-specification-testing.org][/2016-05-05/ Xunit specification testing]] 
+#+INCLUDE: 2016-05-05-xunit-specification-testing.org::motivation
+* [[proj:blog/2014-07-30-adts-for-clear-thinking.org][/2014-07-30/ Algebraic Data Types for clear thinking]]
+#+INCLUDE: 2014-07-30-adts-for-clear-thinking.org::motivation
+* [[proj:blog/2014-05-16-csharp-functional-warts.org][/2014-05-16/ C#: Functional warts]]
+#+INCLUDE: 2014-05-16-csharp-functional-warts.org::motivation
+* [[proj:blog/2014-05-09-csharp-parametricity-and-type-classes.org][/2014-05-09/ C#: Parametricity and type classes]]
+#+INCLUDE: 2014-05-09-csharp-parametricity-and-type-classes.org::motivation
+* [[proj:blog/2013-11-02-closing-the-gaps-in-csharp-linq.org][/2013-11-02/ Closing the gaps in C#: Linq]]
+#+INCLUDE: 2013-11-02-closing-the-gaps-in-csharp-linq.org::motivation
+* [[proj:blog/2013-11-01-closing-the-gaps-in-csharp-immutable-records.org][/2013-11-01/ Closing the gaps in C#: Immutable records]] 
+#+INCLUDE: 2013-11-01-closing-the-gaps-in-csharp-immutable-records.org::motivation
+* [[proj:blog/2013-10-31-closing-the-gaps-in-csharp-maybe.org][/2013-10-31/ Closing the gaps in C#: Maybe]]
+#+INCLUDE: 2013-10-31-closing-the-gaps-in-csharp-maybe.org::motivation
