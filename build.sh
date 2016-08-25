@@ -35,7 +35,7 @@ _push_github() {
 
 _push_firebase() {
     _msg 'Push to Firebase'
-    if [[ -z "$FIREBASE_TOKEN" ]]
+    if [[ -n "$FIREBASE_TOKEN" ]]
     then
         firebase deploy --token "$FIREBASE_TOKEN"
     else
@@ -45,7 +45,7 @@ _push_firebase() {
 
 _push_netlify() {
     _msg 'Push to Netlify'
-    if [[ -z "$NETLIFY_TOKEN" ]]
+    if [[ -n "$NETLIFY_TOKEN" ]]
     then
         netlify -t "$NETLIFY_TOKEN" deploy
     else
