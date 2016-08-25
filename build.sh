@@ -6,7 +6,6 @@ then
 fi
 
 cmds="$@"
-gist=$(cat ./scala/GIST_ID)
 
 _msg() {
     echo -e "\nBUILD: $1"
@@ -44,8 +43,14 @@ _push_firebase() {
     fi
 }
 
-_push() {
-    _push_firebase
+_push_netlify() {
+    _msg 'Push to Netlify'
+    if [[ -z "$NETLIFY_TOKEN" ]]
+    then
+        netlify -t "$NETLIFY_TOKEN" deploy
+    else
+        netlify deploy
+    fi
 }
 
 _caddy() {
@@ -60,6 +65,7 @@ _help() {
     echo '  push           default push (push-gist && push-firebase)'
     echo '  push-github    push site to github'
     echo '  push-firebase  push site to firebase including src archives'
+    echo '  push-netlify   push site to netlify including src archives'
     echo '  serve          serve generated HTML using Caddy'
     echo '  clean-all      remove all generated files'
     echo '  help           this message'
@@ -79,8 +85,11 @@ _dispatch() {
         push-firebase)
             _push_firebase || exit 1
             ;;
+        push-netlify)
+            _push_netlify || exit 1
+            ;;
         push)
-            _push || exit 1
+            _push_netlify || exit 1
             ;;
         serve)
             _caddy

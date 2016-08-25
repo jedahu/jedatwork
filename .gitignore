@@ -3,6 +3,7 @@
 !.firebaserc
 !.gitignore
 !.gitmodules
+!.netlify
 !.orgen
 !.orgen.el
 !.travis.yml
